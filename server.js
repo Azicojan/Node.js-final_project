@@ -2,11 +2,12 @@ const express = require('express');
 const cookieParser = require("cookie-parser");
 const sessions = require('express-session');
 const http = require('http');
-var parseUrl = require('body-parser');
+const parseUrl = require('body-parser');
 const app = express();
 
-var mysql = require('mysql');
+const mysql = require('mysql');
 const { encode } = require('punycode');
+
 
 let encodeUrl = parseUrl.urlencoded({ extended: false });
 
@@ -20,7 +21,7 @@ app.use(sessions({
 
 app.use(cookieParser());
 
-var con = mysql.createConnection({
+let con = mysql.createConnection({
     host: "localhost",
     user: "root", // my username
     password: "Traderzik1231983", // my password
@@ -32,10 +33,10 @@ app.get('/', (req, res) => {
 })
 
 app.post('/register', encodeUrl, (req, res) => {
-    var firstName = req.body.firstName;
-    var lastName = req.body.lastName;
-    var userName = req.body.userName;
-    var password = req.body.password;
+    let firstName = req.body.firstName;
+    let lastName = req.body.lastName;
+    let userName = req.body.userName;
+    let password = req.body.password;
 
     con.connect(function(err) {
         if (err){
@@ -78,7 +79,7 @@ app.post('/register', encodeUrl, (req, res) => {
                 `);
             }
                 // inserting new user data
-                var sql = `INSERT INTO users (firstname, lastname, username, password) VALUES ('${firstName}', '${lastName}', '${userName}', '${password}')`;
+                let sql = `INSERT INTO users (firstname, lastname, username, password) VALUES ('${firstName}', '${lastName}', '${userName}', '${password}')`;
                 con.query(sql, function (err, result) {
                     if (err){
                         console.log(err);
@@ -100,9 +101,10 @@ app.get("/login", (req, res)=>{
     res.sendFile(__dirname + "/login.html");
 });
 
-app.post("/dashboard", encodeUrl, (req, res)=>{
-    var userName = req.body.userName;
-    var password = req.body.password;
+app.post("/login", encodeUrl, (req, res)=>{
+    let userName = req.body.userName;
+    let password = req.body.password;
+    
 
     con.connect(function(err) {
         if(err){
@@ -114,45 +116,68 @@ app.post("/dashboard", encodeUrl, (req, res)=>{
           };
 
           function userPage(){
-            // We create a session for the dashboard (user page) page and save the user data to this session:
+            // We create a session for the main (user page) page and save the user data to this session:
             req.session.user = {
                 firstname: result[0].firstname,
                 lastname: result[0].lastname,
                 username: userName,
-                password: password 
+                password: password,
+                
             };
 
-            res.send(`
-            <!DOCTYPE html>
-            <html lang="en">
-            <head>
-                <title>Login and register form with Node.js, Express.js and MySQL</title>
-                <meta charset="UTF-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1">
-                <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-            </head>
-            <body>
-                <div class="container">
-                    <h3>Hi, ${req.session.user.firstname} ${req.session.user.lastname}</h3>
-                    <textarea id="myText" name="myText" rows="10" cols="70"></textarea><br>
-                    <button type="submit" class="save">Save</button><br><br>
-                    <a href="/login">Log out</a>
-                </div>
-            </body>
-            </html>
-            `);
+            res.redirect('/main');
+            
+            
+
         }
 
+        console.log(req.body);
+       
         if(Object.keys(result).length > 0){
             userPage();
         }else{
             res.sendFile(__dirname + '/failLog.html');
+        
         }
 
         });
     });
 });
 
+app.get("/main", (req, res)=>{
+    res.sendFile(__dirname + "/textarea.html");
+});
+
+app.post("/main", encodeUrl, (req, res)=>{
+    let project_name = req.body.project_name;
+    let textarea = req.body.textarea;
+
+    con.connect(function(err) {
+        if(err){
+            console.log(err);
+        };
+        let sql = `INSERT INTO files (filename, file_path) VALUES ('${project_name}', '${textarea}')`;
+        con.query(sql, function (err, result) {
+            if (err){
+                console.log(err);
+            }else{
+                // using userPage function for creating user page
+                console.log('1 record inserted');
+                
+            };
+        });
+
+
+      });
+
+    });
+    
+
+
+
+
 app.listen(3000, ()=>{
     console.log("Server running on port 3000");
 });
+
+//https://dev.to/jahongir2007/creating-a-login-and-registration-form-with-nodejs-expressjs-and-mysql-database-160n
