@@ -62,38 +62,7 @@ app.post('/register', encodeUrl, (req, res) => {
                 
             }
             
-            /*
-              else if(Object.keys(result).length == 0){
-
-                connection.query(`SELECT * FROM users `, function(err, result){
-                    
-                  // console.log(result[0]);
-                   for(let i = 0; i < result.length; i++){
-                       
-                           
-                          // db_password = result[i].password;
-                          if(userName === result[i].username && password !== result[i].password){
-
-                           console.log(result[i].password);
-                           return res.sendFile(__dirname + '/existingFailReg.html');
-                            
-                            
-
-                          }
-                          
-                   };
-                                        
-                   
-                  
-                   connection.release();
-                   if(err){
-                       console.log(err);
-                       
-                   };
-                   
-               });
-
-            }  */
+            
             else{              
 
                 //creating user page in userPage function
@@ -216,23 +185,7 @@ app.post("/login", encodeUrl, (req, res)=>{
         
         }
          
-        /*  function userPage(){
-            // We create a session for the main (user page) page and save the user data to this session:
-            req.session.user = {
-                firstname: result[0].firstname,
-                lastname: result[0].lastname,
-                username: userName,
-                password: password
-                
-            };      
-
-        }*/
-        
-        //user_id = result[0].id;
-        //console.log(Object.keys(result).length);
-        
-       // console.log(user_id);
-       //console.log(Object.keys(result));         
+             
 
         });
 
@@ -323,7 +276,9 @@ app.get("/main", (req, res)=>{
 app.post("/main", encodeUrl, (req, res)=>{
     let project_name = req.body.project_name;
     let textarea = req.body.textarea;
+    let deleted_file = req.body.delete_my_project;
     let file = `${project_name}.txt`;
+
 
       for(let i = 0; i < filesList.length; i++){
 
@@ -336,12 +291,16 @@ app.post("/main", encodeUrl, (req, res)=>{
         };
 
 
-      if(project_name === similarName){
+      if(project_name === similarName && project_name.length>0){
             res.send("<h2>Sorry, such a title already exists. Could you rename it, please?</h2>");
+           // console.log(deleted_file);
+           // console.log(project_name);
+           // console.log(similarName);
 
 
       }
-      else{
+      else if(project_name.length>0){
+
             pool.getConnection(function(err, connection) {
                 if(err){
                     console.log(err);
@@ -368,17 +327,51 @@ app.post("/main", encodeUrl, (req, res)=>{
                     console.log('A new file has just been saved.')
                 });
 
-
   
-            };     
-        
+            }
+            else  {
+
+                if(projectList.includes(deleted_file)){
+
+                    pool.getConnection(function(err, connection) {
+                        if(err){
+                            console.log(err);
+                        };
+                        let sql = `DELETE FROM files WHERE users_id = "${user_id}" AND filename = "${deleted_file}"`;
+                            connection.query(sql, function (err, result) {
+    
+                                        
+                                console.log('The file has successfully been deleted.');
+                                //console.log(result);
+                               
+                                const index = projectList.indexOf(deleted_file);
+                                projectList.splice(index,1);
+            
+                                connection.release();
+                                if (err){
+                                    console.log(err);
+                                }
+                    });
+                })
+            
+                fs.unlink(`${deleted_file}.txt`, function (err) {
+                    if (err) throw err;
+                    console.log('File deleted!');
+                  });
+
+
+
+                }
+                    else {res.send("<h2>Sorry, there is no such a file.</h2>");}
+               
+
+            }        
 
         
 
 
       });
-
-    
+   
     
     
 
